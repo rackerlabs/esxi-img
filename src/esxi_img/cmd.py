@@ -370,12 +370,11 @@ def _create_vmdk_macos(source_dir: Path, image_path: str, size_mb: int) -> int:
             "y",
         ]
 
-        logger.info("You must run the following afterwards: gdisk %s", image_path)
-        logger.info("And use the following commands: %s", gdisk_cmds)
-
-        # gdisk_input = "\n".join(gdisk_cmds)
-        # subprocess.run(["gdisk", str(img_dmg_path)], input=gdisk_input,
-        #                check=True, text=True)
+        # each command followed by [Enter]
+        gdisk_input = "\n".join(gdisk_cmds) + "\n"
+        subprocess.run(
+            ["gdisk", str(img_dmg_path)], input=gdisk_input, check=True, text=True
+        )
 
     finally:
         # Step 8: Detach the disk image
