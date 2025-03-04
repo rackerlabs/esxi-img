@@ -1,6 +1,6 @@
 import pytest
 
-from netinit.nic_list import NICList
+from esxi_netinit.nic_list import NICList
 
 
 @pytest.fixture

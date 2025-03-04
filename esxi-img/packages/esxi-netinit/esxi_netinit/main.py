@@ -1,8 +1,8 @@
 import argparse
 import sys
 
-from netinit.esxconfig import ESXConfig
-from netinit.network_data import NetworkData
+from esxi_netinit.esxconfig import ESXConfig
+from esxi_netinit.network_data import NetworkData
 
 OLD_MGMT_PG = "Management Network"
 OLD_VSWITCH = "vSwitch0"
