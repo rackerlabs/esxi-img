@@ -17,7 +17,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-esxi-netinit = { path = "../esxi-netinit" }
+esxi-netinit = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
 
 [tool.ruff]
 # use our default and override anything we need specifically
