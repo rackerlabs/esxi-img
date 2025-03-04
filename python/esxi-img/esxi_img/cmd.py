@@ -487,7 +487,7 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> None
         )
 
         # Clean up raw disk
-        Path(raw_path).unlink()
+        # Path(raw_path).unlink()
     except subprocess.CalledProcessError as e:
         raise Exception(
             f"Failed to create VMDK: {e.cmd}\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
