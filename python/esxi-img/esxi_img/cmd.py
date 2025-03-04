@@ -414,8 +414,62 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> None
         )
 
         # Format the raw disk and copy files
-        # This is simplified and would need actual implementation
-        # to format and copy the files to the raw disk
+        loopdev = None
+        mount_dir = None
+        try:
+            loopdev = (
+                subprocess.check_output(["losetup", "--show", "-f", raw_path])
+                .decode()
+                .strip()
+            )
+
+            commands = (
+                "\n".join(
+                    [
+                        "g",  # new GPT partition table,
+                        "n",  # new partition,
+                        "1",  # first partition,
+                        "",  # start at default,
+                        "",  # fill up whole space,
+                        "t",  # change partition type,
+                        "uefi",  # to UEFI
+                        "w",  # save
+                    ]
+                )
+                + "\n"
+            )
+            subprocess.run(["fdisk", loopdev], input=commands.encode(), check=False)
+
+            # Detach and reattach loop device to refresh partition table.
+            # Poor man's partprobe.
+            subprocess.run(["losetup", "-d", loopdev], check=True)
+            loopdev = (
+                subprocess.check_output(
+                    ["losetup", "--show", "-f", "--partscan", raw_path]
+                )
+                .decode()
+                .strip()
+            )
+
+            partdev = loopdev + "p1"
+            subprocess.run(["mkfs.vfat", "-F", "32", partdev], check=True)
+            mount_dir = tempfile.mkdtemp()
+            subprocess.run(["mount", partdev, mount_dir], check=True)
+
+            for item in os.listdir(source_dir):
+                src = os.path.join(source_dir, item)
+                dst = os.path.join(mount_dir, item)
+                if os.path.isdir(src):
+                    shutil.copytree(src, dst, dirs_exist_ok=True)
+                else:
+                    shutil.copy(src, dst)
+
+            subprocess.run(["umount", mount_dir], check=True)
+        finally:
+            if mount_dir:
+                os.rmdir(mount_dir)
+            if loopdev:
+                subprocess.run(["losetup", "-d", loopdev], check=True)
 
         # Convert raw disk to VMDK
         subprocess.run(
