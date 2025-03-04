@@ -385,7 +385,7 @@ def _create_vmdk_macos(source_dir: Path, image_path: str, size_mb: int) -> int:
     return 0
 
 
-def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> None:
+def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
     """Create a VMDK image from the extracted ISO contents.
 
     Args:
@@ -488,6 +488,8 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> None
 
         # Clean up raw disk
         # Path(raw_path).unlink()
+
+        return 0
     except subprocess.CalledProcessError as e:
         raise Exception(
             f"Failed to create VMDK: {e.cmd}\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
