@@ -1,0 +1,51 @@
+name: code tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "esxi-img/**"
+      - ".github/workflows/code-test.yaml"
+  pull_request:
+    paths:
+      - "esxi-img/**"
+      - ".github/workflows/code-test.yaml"
+  workflow_dispatch:
+
+# limit rapid succession from pushes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        packages:
+          - esxi-img
+          - packages/esxi-netinit
+
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.4"
+          enable-cache: true
+          cache-dependency-glob: "esxi-img/uv.lock"
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "esxi-img/pyproject.toml"
+
+      - name: Install the project
+        run: uv sync --all-packages --dev
+        working-directory: esxi-img
+
+      - name: Run tests
+        run: uv run pytest
+        working-directory: esxi-img

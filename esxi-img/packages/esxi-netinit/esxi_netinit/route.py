@@ -8,4 +8,4 @@ class Route:
     network: str
 
     def is_default(self):
-        return self.network == "0.0.0.0" and self.netmask == "0.0.0.0"
+        return self.network == "0.0.0.0" and self.netmask == "0.0.0.0"  # noqa: S104
