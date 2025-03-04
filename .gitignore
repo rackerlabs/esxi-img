@@ -2,3 +2,5 @@ ks_template.cfg
 esxiimg.tgz
 *.vmdk.dmg
 *.vmdk
+__pycache__
+*.py{c,d,o}
