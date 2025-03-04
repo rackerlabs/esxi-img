@@ -1,6 +1,6 @@
 import pytest
 
-from netinit.esxhost import ESXHost
+from esxi_netinit.esxhost import ESXHost
 
 
 @pytest.fixture

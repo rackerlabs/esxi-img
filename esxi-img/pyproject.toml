@@ -5,9 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "esxi-netinit",
+    "esxi-netinit>=0.1.0",
     "pycdlib>=1.14.0",
 ]
+authors = [
+  {name="Doug Goldstein", email="Doug.Goldstein@rackspace.com"},
+  {name="Marek Skrobacki", email="marek.skrobacki@rackspace.co.uk"}
+]
+license = {text="Apache-2.0"}
+
+[project.urls]
+Homepage = "https://github.com/rackerlabs/esxi-img"
+Issues = "https://github.com/rackerlabs/esxi-img/issues"
 
 [project.scripts]
 esxi-img = "esxi_img.cmd:main"
@@ -24,9 +33,39 @@ members = ["packages/*"]
 
 
 [tool.ruff]
-# use our default and override anything we need specifically
-extend = "../pyproject.toml"
 target-version = "py311"
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "D",       # pydocstyle
+  "E",       # pycodestyle (error)
+  "F",       # pyflakes
+  "G",       # flake8-logging-format
+  "B",       # flake8-bugbear
+  "I",       # isort
+  "S",       # flake8-bandit
+  "UP",      # pyupgrade
+  "LOG",     # flake8-logging
+  "ASYNC",   # flake8-async
+]
+
+ignore = [
+    "D100",  # don't require docs for every module
+    "D101",  # don't require docs for every class
+    "D102",  # don't require docs for every class method
+    "D103",  # don't require docs for every function
+    "D104",  # don't require docs for every package
+    "D106",  # don't require docs for every nested class
+    "D107",  # don't require docs for __init__
+    "D417"   # don't require docs for every function parameter
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "esxi_img/cmd.py" = [

@@ -1,9 +1,9 @@
 import json
 from dataclasses import is_dataclass
 
-from netinit.link import Link
-from netinit.network_data import NetworkData
-from netinit.route import Route
+from esxi_netinit.link import Link
+from esxi_netinit.network_data import NetworkData
+from esxi_netinit.route import Route
 
 
 def test_links_parsing(network_data_single):

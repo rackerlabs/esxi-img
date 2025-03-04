@@ -1,8 +1,8 @@
 import pytest
 
-from netinit.esxconfig import ESXConfig
-from netinit.esxhost import ESXHost
-from netinit.network_data import NetworkData
+from esxi_netinit.esxconfig import ESXConfig
+from esxi_netinit.esxhost import ESXHost
+from esxi_netinit.network_data import NetworkData
 
 
 @pytest.fixture
