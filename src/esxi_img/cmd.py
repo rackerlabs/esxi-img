@@ -15,7 +15,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-import netinit
+import esxi_netinit
 import pycdlib
 
 import esxi_img
@@ -130,7 +130,7 @@ def generate_installer_helper(ks_template_path: str | None, output_path: str) ->
                         tar.addfile(tar_info, f)
 
             # add in netinit
-            netinit_files = importlib.resources.files(netinit)
+            netinit_files = importlib.resources.files(esxi_netinit)
             for entry in netinit_files.iterdir():
                 if entry.stem in ["__pycache__", ".", ".."]:
                     continue
