@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.11"
 
 [manifest]
@@ -18,7 +19,6 @@ wheels = [
 
 [[package]]
 name = "esxi-img"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "esxi-netinit" },
@@ -33,7 +33,6 @@ requires-dist = [
 
 [[package]]
 name = "esxi-netinit"
-version = "0.1.0"
 source = { editable = "packages/esxi-netinit" }
 
 [package.dev-dependencies]

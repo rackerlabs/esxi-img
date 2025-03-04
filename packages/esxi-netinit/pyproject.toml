@@ -1,6 +1,5 @@
 [project]
 name = "esxi-netinit"
-version = "0.1.0"
 description = "Script to initialize networking on ESXi hosts with usage of Openstack network_data.json"
 authors = [
   {name="Doug Goldstein", email="Doug.Goldstein@rackspace.com"},
@@ -9,9 +8,10 @@ authors = [
 license = {text="Apache-2.0"}
 readme = "README.md"
 requires-python = ">=3.8"
+dynamic = ["version"]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
@@ -20,6 +20,13 @@ dev = [
     "pytest-subprocess>=1.5.3",
     "pytest>=8.3.5",
 ]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = "../../"
+local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
