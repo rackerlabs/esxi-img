@@ -1,7 +1,7 @@
 [project]
 name = "esxi-img"
 version = "0.1.0"
-description = "Add your description here"
+description = "ESXi installer image generator"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
