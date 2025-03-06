@@ -27,12 +27,6 @@ logging.basicConfig(
 logger = logging.getLogger("esxi-img")
 
 
-# Package information
-DEFAULT_KS_TEMPLATE = "ks_template.cfg"
-DEFAULT_INSTALLER_HELPER = "esxiimg.tgz"
-DEFAULT_OUTPUT_IMAGE = "esxi-installer.vmdk"
-
-
 def _read_ks_template() -> str:
     return (
         importlib.resources.files(esxi_img)
@@ -170,6 +164,7 @@ def update_esxi_config(file_path: Path):
 def generate_image(
     iso_path: str,
     output_path: str,
+    fmt: str,
     ks_template_path: str | None = None,
     esxiimg_path: str | None = None,
 ) -> int:
@@ -177,7 +172,8 @@ def generate_image(
 
     Args:
         iso_path: Path to the ESXi installer ISO
-        output_path: Path to write the output VMDK to
+        output_path: Path to write the output disk image to
+        fmt: Disk image format
         ks_template_path: Optional path to a kickstart template
         esxiimg_path: Optional path to an installer helper tarball
 
@@ -189,10 +185,6 @@ def generate_image(
     out_path = Path(output_path).resolve()
     if out_path.exists():
         logger.error("%s already exists, remove it first", out_path)
-        return 1
-    out_path = out_path.with_suffix("".join(out_path.suffixes) + ".dmg")
-    if out_path.exists():
-        logger.error("%s exists (take note of the name), remove it first", out_path)
         return 1
 
     # Validate ISO path
@@ -237,12 +229,19 @@ def generate_image(
             update_esxi_config(iso_extract_dir / "BOOT.CFG")
             update_esxi_config(iso_extract_dir / "EFI" / "BOOT" / "BOOT.CFG")
 
-            # Create VMDK image
-            logger.info("Creating VMDK image (512mb) at %s", output_path)
-            if _create_vmdk(iso_extract_dir, output_path, 512) != 0:
+            # Create raw disk image
+            size_mb = 512
+            disk_img_path = temp_path / "disk.img"
+            logger.info("Creating disk image (%dmb) at %s", size_mb, disk_img_path)
+            if _create_disk_img(iso_extract_dir, disk_img_path, size_mb) != 0:
                 return 1
 
-            logger.info("Successfully created VMDK image at %s", output_path)
+            if fmt != "raw":
+                _convert_img(disk_img_path, out_path, fmt)
+            else:
+                disk_img_path.rename(out_path)
+
+            logger.info("Successfully created image at %s", out_path)
             return 0
     except Exception:
         logger.exception("Failed to generate image")
@@ -279,17 +278,17 @@ def _extract_iso(iso_path: str, output_dir: Path) -> None:
     iso.close()
 
 
-def _create_vmdk(source_dir: Path, image_path: str, size_mb: int) -> int:
+def _create_disk_img(source_dir: Path, image_path: str, size_mb: int) -> int:
     system = platform.system().lower()
     if system == "darwin":
-        return _create_vmdk_macos(source_dir, image_path, size_mb)
+        return _create_disk_img_macos(source_dir, image_path, size_mb)
     elif system == "linux":
-        return _create_vmdk_linux(source_dir, image_path, size_mb)
+        return _create_disk_img_linux(source_dir, image_path, size_mb)
     else:
         raise RuntimeError(f"Unsupported OS: {system}")
 
 
-def _create_vmdk_macos(source_dir: Path, image_path: str, size_mb: int) -> int:
+def _create_disk_img_macos(source_dir: Path, image_path: str, size_mb: int) -> int:
     image_path = Path(image_path).resolve()
     img_dmg_path = image_path.with_suffix("".join(image_path.suffixes) + ".dmg")
 
@@ -384,22 +383,17 @@ def _create_vmdk_macos(source_dir: Path, image_path: str, size_mb: int) -> int:
     return 0
 
 
-def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
-    """Create a VMDK image from the extracted ISO contents.
+def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) -> int:
+    """Create a disk image from the extracted ISO contents.
 
     Args:
         source_dir: Directory containing the extracted ISO contents
-        output_path: Path to write the VMDK to
+        output_path: Path to write the disk image to
 
     Raises:
-        Exception: If VMDK creation fails
+        Exception: If disk image creation fails
     """
-    # For this example, we'll use qemu-img to create the VMDK
-    # In a real implementation, you might want to use a Python VMDK library
     try:
-        # Create a raw disk image first
-        raw_path = f"{output_path}.raw"
-
         # Calculate required size (e.g., ISO size + 200MB)
         size_mb = (
             sum(f.stat().st_size for f in source_dir.glob("**/*") if f.is_file())
@@ -409,7 +403,8 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
 
         # Create raw disk image
         subprocess.run(
-            ["qemu-img", "create", "-f", "raw", raw_path, f"{size_mb}M"], check=True
+            ["qemu-img", "create", "-f", "raw", str(output_path), f"{size_mb}M"],
+            check=True,
         )
 
         # Format the raw disk and copy files
@@ -417,7 +412,7 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
         mount_dir = None
         try:
             loopdev = (
-                subprocess.check_output(["losetup", "--show", "-f", raw_path])
+                subprocess.check_output(["losetup", "--show", "-f", str(output_path)])
                 .decode()
                 .strip()
             )
@@ -444,7 +439,7 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
             subprocess.run(["losetup", "-d", loopdev], check=True)
             loopdev = (
                 subprocess.check_output(
-                    ["losetup", "--show", "-f", "--partscan", raw_path]
+                    ["losetup", "--show", "-f", "--partscan", str(output_path)]
                 )
                 .decode()
                 .strip()
@@ -470,6 +465,16 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
             if loopdev:
                 subprocess.run(["losetup", "-d", loopdev], check=True)
 
+        return 0
+    except subprocess.CalledProcessError as e:
+        raise Exception(
+            f"Failed to create image: {e.cmd}\nstdout:\n{e.stdout}"
+            f"\nstderr:\n{e.stderr}"
+        ) from None
+
+
+def _convert_img(raw_path: Path, out_path: Path, fmt: str):
+    try:
         # Convert raw disk to VMDK
         subprocess.run(
             [
@@ -478,20 +483,16 @@ def _create_vmdk_linux(source_dir: Path, output_path: str, size_mb: int) -> int:
                 "-f",
                 "raw",
                 "-O",
-                "vmdk",
-                raw_path,
-                output_path,
+                fmt,
+                str(raw_path),
+                str(out_path),
             ],
             check=True,
         )
-
-        # Clean up raw disk
-        # Path(raw_path).unlink()
-
-        return 0
     except subprocess.CalledProcessError as e:
         raise Exception(
-            f"Failed to create VMDK: {e.cmd}\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
+            f"Failed to convert image: {e.cmd}\nstdout:\n{e.stdout}"
+            f"\nstderr:\n{e.stderr}"
         ) from None
 
 
@@ -510,10 +511,9 @@ def _create_argument_parser() -> argparse.ArgumentParser:
     # ks-template subcommand
     ks_parser = subparsers.add_parser("ks-template", help="Generate kickstart template")
     ks_parser.add_argument(
-        "--output",
+        "KICKSTART",
         type=str,
-        default=DEFAULT_KS_TEMPLATE,
-        help=f"Output kickstart template file (default: {DEFAULT_KS_TEMPLATE})",
+        help="Output kickstart template filename",
     )
 
     # installer-helper subcommand
@@ -524,10 +524,9 @@ def _create_argument_parser() -> argparse.ArgumentParser:
         "--ks-template", type=str, help="Path to kickstart template file (optional)"
     )
     helper_parser.add_argument(
-        "--output",
+        "TARBALL",
         type=str,
-        default=DEFAULT_INSTALLER_HELPER,
-        help=f"Output installer helper tarball (default: {DEFAULT_INSTALLER_HELPER})",
+        help="Output installer helper tarball filename",
     )
 
     # gen-img subcommand
@@ -535,18 +534,24 @@ def _create_argument_parser() -> argparse.ArgumentParser:
         "gen-img", help="Generate OpenStack image from ESXi ISO"
     )
     img_parser.add_argument(
-        "--output",
-        type=str,
-        default=DEFAULT_OUTPUT_IMAGE,
-        help=f"Output VMDK image (default: {DEFAULT_OUTPUT_IMAGE})",
-    )
-    img_parser.add_argument(
         "--ks-template", type=str, help="Path to kickstart template file (optional)"
     )
     img_parser.add_argument(
         "--esxiimg", type=str, help="Path to installer helper tarball (optional)"
     )
+    img_parser.add_argument(
+        "--format",
+        type=str,
+        choices=["raw", "qcow2", "vmdk"],
+        default="raw",
+        help="Format of the generated disk image (default: %(default)s)",
+    )
     img_parser.add_argument("ISO", type=str, help="Path to ESXi installer ISO")
+    img_parser.add_argument(
+        "DISKIMG",
+        type=str,
+        help="Output disk image filename",
+    )
 
     return parser
 
@@ -562,11 +567,13 @@ def main() -> int:
 
     try:
         if args.command == "ks-template":
-            return generate_ks_template(args.output)
+            return generate_ks_template(args.KICKSTART)
         elif args.command == "installer-helper":
-            return generate_installer_helper(args.ks_template, args.output)
+            return generate_installer_helper(args.ks_template, args.TARBALL)
         elif args.command == "gen-img":
-            return generate_image(args.ISO, args.output, args.ks_template, args.esxiimg)
+            return generate_image(
+                args.ISO, args.DISKIMG, args.format, args.ks_template, args.esxiimg
+            )
         else:
             logger.error("Unknown command: %s", args.command)
             return 1
