@@ -188,7 +188,10 @@ def update_esxi_config(file_path: Path):
             if not line.strip().endswith("--- /esxiimg.tgz"):
                 line = line.strip() + " --- /esxiimg.tgz"
         elif line.startswith("kernelopt="):
-            line = re.sub(r"ks=[^ ]+", "ks=file:///esxiimg/KS.CFG", line)
+            # remove any existing ks line
+            line = re.sub(r"ks=[^ ]+", "", line)
+            # append our kickstart file
+            line += " ks=file:///esxiimg/KS.CFG"
         updated_lines.append(line)
 
     file_path.write_text("\n".join(updated_lines) + "\n")
