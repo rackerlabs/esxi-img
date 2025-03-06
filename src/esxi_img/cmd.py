@@ -73,6 +73,22 @@ def _gen_ks_snippets() -> str:
     return output
 
 
+def _full_kickstart(user_ks: str | None) -> str:
+    if user_ks:
+        kspath = Path(user_ks)
+        if not kspath.exists():
+            logger.error("Your supplied ks-template %s does not exist.", kspath)
+            return 1
+        with kspath.open("r") as f:
+            full_template = f.read()
+    else:
+        full_template = _read_ks_template()
+
+    full_template += "\n"
+    full_template += _gen_ks_snippets()
+    return full_template
+
+
 def generate_ks_template(output_path: str) -> int:
     """Generate a kickstart template file.
 
@@ -85,13 +101,10 @@ def generate_ks_template(output_path: str) -> int:
     logger.info("Generating kickstart template at %s", output_path)
     try:
         # Read the template from package resources
-        template_content = _read_ks_template()
+        full_template = _full_kickstart(None)
 
         # Write the template to the output file
         output_file = Path(output_path)
-        full_template = template_content
-        full_template += "\n"
-        full_template += _gen_ks_snippets()
         output_file.write_text(full_template)
 
         logger.info("Successfully wrote kickstart template to %s", output_path)
@@ -115,15 +128,7 @@ def generate_installer_helper(ks_template_path: str | None, output_path: str) ->
     tarball = Tarball()
     top_dir = Path("esxiimg/")
 
-    if ks_template_path:
-        kspath = Path(ks_template_path)
-        if not kspath.exists():
-            logger.error("Your supplied ks-template %s does not exist.", kspath)
-            return 1
-        with kspath.open("r") as f:
-            ks_template = f.read()
-    else:
-        ks_template = _read_ks_template()
+    ks_template = _full_kickstart(ks_template_path)
 
     tarball.add_text((top_dir / "KS.CFG"), ks_template)
 
