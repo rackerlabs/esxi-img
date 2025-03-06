@@ -27,12 +27,6 @@ logging.basicConfig(
 logger = logging.getLogger("esxi-img")
 
 
-# Package information
-DEFAULT_KS_TEMPLATE = "ks_template.cfg"
-DEFAULT_INSTALLER_HELPER = "esxiimg.tgz"
-DEFAULT_OUTPUT_IMAGE = "esxi-installer.raw"
-
-
 def _read_ks_template() -> str:
     return (
         importlib.resources.files(esxi_img)
@@ -517,10 +511,9 @@ def _create_argument_parser() -> argparse.ArgumentParser:
     # ks-template subcommand
     ks_parser = subparsers.add_parser("ks-template", help="Generate kickstart template")
     ks_parser.add_argument(
-        "--output",
+        "KICKSTART",
         type=str,
-        default=DEFAULT_KS_TEMPLATE,
-        help=f"Output kickstart template file (default: {DEFAULT_KS_TEMPLATE})",
+        help="Output kickstart template filename",
     )
 
     # installer-helper subcommand
@@ -531,21 +524,14 @@ def _create_argument_parser() -> argparse.ArgumentParser:
         "--ks-template", type=str, help="Path to kickstart template file (optional)"
     )
     helper_parser.add_argument(
-        "--output",
+        "TARBALL",
         type=str,
-        default=DEFAULT_INSTALLER_HELPER,
-        help=f"Output installer helper tarball (default: {DEFAULT_INSTALLER_HELPER})",
+        help="Output installer helper tarball filename",
     )
 
     # gen-img subcommand
     img_parser = subparsers.add_parser(
         "gen-img", help="Generate OpenStack image from ESXi ISO"
-    )
-    img_parser.add_argument(
-        "--output",
-        type=str,
-        default=DEFAULT_OUTPUT_IMAGE,
-        help=f"Output disk image (default: {DEFAULT_OUTPUT_IMAGE})",
     )
     img_parser.add_argument(
         "--ks-template", type=str, help="Path to kickstart template file (optional)"
@@ -554,6 +540,11 @@ def _create_argument_parser() -> argparse.ArgumentParser:
         "--esxiimg", type=str, help="Path to installer helper tarball (optional)"
     )
     img_parser.add_argument("ISO", type=str, help="Path to ESXi installer ISO")
+    img_parser.add_argument(
+        "DISKIMG",
+        type=str,
+        help="Output disk image filename",
+    )
 
     return parser
 
@@ -569,12 +560,12 @@ def main() -> int:
 
     try:
         if args.command == "ks-template":
-            return generate_ks_template(args.output)
+            return generate_ks_template(args.KICKSTART)
         elif args.command == "installer-helper":
-            return generate_installer_helper(args.ks_template, args.output)
+            return generate_installer_helper(args.ks_template, args.TARBALL)
         elif args.command == "gen-img":
             return generate_image(
-                args.ISO, args.output, "raw", args.ks_template, args.esxiimg
+                args.ISO, args.DISKIMG, "raw", args.ks_template, args.esxiimg
             )
         else:
             logger.error("Unknown command: %s", args.command)
