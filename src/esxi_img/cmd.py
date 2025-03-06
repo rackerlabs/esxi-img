@@ -229,8 +229,18 @@ def generate_image(
             update_esxi_config(iso_extract_dir / "BOOT.CFG")
             update_esxi_config(iso_extract_dir / "EFI" / "BOOT" / "BOOT.CFG")
 
+            # Calculate required size (e.g., ISO size + 200MB)
+            size_mb = (
+                sum(
+                    f.stat().st_size
+                    for f in iso_extract_dir.glob("**/*")
+                    if f.is_file()
+                )
+                // (1024 * 1024)
+                + 200
+            )
+
             # Create raw disk image
-            size_mb = 512
             disk_img_path = temp_path / "disk.img"
             logger.info("Creating disk image (%dmb) at %s", size_mb, disk_img_path)
             if _create_disk_img(iso_extract_dir, disk_img_path, size_mb) != 0:
@@ -394,13 +404,6 @@ def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) ->
         Exception: If disk image creation fails
     """
     try:
-        # Calculate required size (e.g., ISO size + 200MB)
-        size_mb = (
-            sum(f.stat().st_size for f in source_dir.glob("**/*") if f.is_file())
-            // (1024 * 1024)
-            + 200
-        )
-
         # Create raw disk image
         subprocess.run(
             ["qemu-img", "create", "-f", "raw", str(output_path), f"{size_mb}M"],
