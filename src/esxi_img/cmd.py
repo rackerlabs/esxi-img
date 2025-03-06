@@ -36,6 +36,41 @@ def _read_ks_template() -> str:
     )
 
 
+def _gen_ks_snippets() -> str:
+    """Generate the hardcoded kickstart pieces that we always include.
+
+    Returns:
+        str: the hardcoded snippets formatted correctly to be combined
+        with the user suppled data
+    """
+    output = ""
+
+    data_path = importlib.resources.files(esxi_img).joinpath("data")
+
+    for part in ["pre", "post", "firstboot"]:
+        # grab all the snippets
+        snips = [item.name for item in data_path.joinpath(part).iterdir()]
+        # order them by their name
+        snips = sorted(snips)
+
+        for item in snips:
+            snip_path = data_path.joinpath(part).joinpath(item)
+
+            if snip_path.suffix == ".py":
+                interp = "python"
+            elif snip_path.suffix == ".sh":
+                interp = "busybox"
+            else:
+                raise Exception(f"Invalid snippet {part}/{item}")
+
+            output += f"%{part} --interpreter={interp}\n"
+            with snip_path.open("r") as f:
+                output += f.read()
+                output += "\n"
+
+    return output
+
+
 def generate_ks_template(output_path: str) -> int:
     """Generate a kickstart template file.
 
@@ -52,7 +87,10 @@ def generate_ks_template(output_path: str) -> int:
 
         # Write the template to the output file
         output_file = Path(output_path)
-        output_file.write_text(template_content)
+        full_template = template_content
+        full_template += "\n"
+        full_template += _gen_ks_snippets()
+        output_file.write_text(full_template)
 
         logger.info("Successfully wrote kickstart template to %s", output_path)
         return 0

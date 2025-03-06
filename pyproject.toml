@@ -77,3 +77,6 @@ convention = "google"
     "S603",     # subprocess untrusted input
     "S607",     # subprocess partial path
 ]
+"src/esxi_img/data/pre/15-set-root-passwd.py" = [
+    "S108",     # insecure password use, sure is
+]
