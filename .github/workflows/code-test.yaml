@@ -23,12 +23,12 @@ jobs:
           version: "0.6.4"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          pyproject-file: "pyproject.toml"
 
       - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
           python-version-file: "pyproject.toml"
-          pyproject-file: "pyproject.toml"
 
       - name: Install the project
         run: uv sync --all-packages --dev
