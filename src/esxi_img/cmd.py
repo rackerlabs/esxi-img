@@ -539,6 +539,13 @@ def _create_argument_parser() -> argparse.ArgumentParser:
     img_parser.add_argument(
         "--esxiimg", type=str, help="Path to installer helper tarball (optional)"
     )
+    img_parser.add_argument(
+        "--format",
+        type=str,
+        choices=["raw", "qcow2", "vmdk"],
+        default="raw",
+        help="Format of the generated disk image (default: %(default)s)",
+    )
     img_parser.add_argument("ISO", type=str, help="Path to ESXi installer ISO")
     img_parser.add_argument(
         "DISKIMG",
@@ -565,7 +572,7 @@ def main() -> int:
             return generate_installer_helper(args.ks_template, args.TARBALL)
         elif args.command == "gen-img":
             return generate_image(
-                args.ISO, args.DISKIMG, "raw", args.ks_template, args.esxiimg
+                args.ISO, args.DISKIMG, args.format, args.ks_template, args.esxiimg
             )
         else:
             logger.error("Unknown command: %s", args.command)
