@@ -80,3 +80,11 @@ convention = "google"
 "src/esxi_img/data/pre/15-set-root-passwd.py" = [
     "S108",     # insecure password use, sure is
 ]
+"tests/**/*.py" = [
+    "S101",     # allow 'assert' for pytest
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
