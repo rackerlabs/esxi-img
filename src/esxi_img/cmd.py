@@ -14,11 +14,13 @@ import sys
 import tarfile
 import tempfile
 from pathlib import Path
+from pathlib import PurePath
 
 import esxi_netinit
 import pycdlib
 
 import esxi_img
+from esxi_img.tarball import Tarball
 
 # Configure logging
 logging.basicConfig(
@@ -110,6 +112,7 @@ def generate_installer_helper(ks_template_path: str | None, output_path: str) ->
     """
     logger.info("Generating installer helper tarball at %s", output_path)
 
+    tarball = Tarball()
     top_dir = Path("esxiimg/")
 
     if ks_template_path:
@@ -122,27 +125,30 @@ def generate_installer_helper(ks_template_path: str | None, output_path: str) ->
     else:
         ks_template = _read_ks_template()
 
-    tarball = [
-        (top_dir, tarfile.DIRTYPE, ""),
-        (top_dir / "KS.CFG", tarfile.REGTYPE, ks_template),
-    ]
+    tarball.add_text((top_dir / "KS.CFG"), ks_template)
+
+    # add in netinit by walking all the resources
+    netinit_files = importlib.resources.files(esxi_netinit)
+    for entry in netinit_files.iterdir():
+        if entry.name in ["__pycache__", ".", ".."]:
+            continue
+        path = top_dir / entry.relative_to(netinit_files.parent)
+        if entry.is_file():
+            tarball.add_file(path, entry)
+        elif entry.is_dir():
+            continue
+        else:
+            raise Exception("unsupported file type for {path}")
+
+        # add it to the list of files to include
 
     try:
-        # Read files from package resources
+        # Add files and directories to the tarball
 
-        # rootpwd_content = importlib.resources.read_text(
-        #    esxi_img.scripts.pre, "rootpwd.py"
-        # )
-        # tarball.append(((pre_dir / "esxi-net.py"), rootpwd_content))
-
-        # after any other additions
-        tarball.append((top_dir / "netinit", tarfile.DIRTYPE, ""))
-
-        # Create the tarball
         # ESXi's VisorFSTar wants "old" GNU format
         with tarfile.open(output_path, "w:gz", format=tarfile.GNU_FORMAT) as tar:
             # Add all files from the list
-            for path, ftype, content in tarball:
+            for path, ftype, content in tarball.iter_files():
                 if ftype == tarfile.DIRTYPE:
                     arcname = str(path) + "/"
                 else:
@@ -155,26 +161,15 @@ def generate_installer_helper(ks_template_path: str | None, output_path: str) ->
                 if ftype == tarfile.DIRTYPE:
                     tar_info.mode = 0o0755
                     tar.addfile(tar_info)
-                else:
+                elif isinstance(content, PurePath):
+                    tar_info.mode = 0o644
+                    with content.open("rb") as f:
+                        tar_info.size = content.stat().st_size
+                        tar.addfile(tar_info, f)
+                elif isinstance(content, str):
                     tar_info.mode = 0o644
                     tar_info.size = len(content)
                     with io.BytesIO(content.encode("utf-8")) as f:
-                        tar.addfile(tar_info, f)
-
-            # add in netinit
-            netinit_files = importlib.resources.files(esxi_netinit)
-            for entry in netinit_files.iterdir():
-                if entry.stem in ["__pycache__", ".", ".."]:
-                    continue
-                path = top_dir / entry.relative_to(netinit_files.parent)
-                if entry.is_file():
-                    tar_info = tarfile.TarInfo(name=str(path))
-                    tar_info.uid = 0
-                    tar_info.gid = 0
-                    tar_info.type = tarfile.REGTYPE
-                    tar_info.mode = 0o644
-                    with entry.open("rb") as f:
-                        tar_info.size = entry.stat().st_size
                         tar.addfile(tar_info, f)
 
         logger.info("Successfully created installer helper tarball at %s", output_path)
