@@ -1,4 +1,7 @@
+import logging
 import subprocess
+
+logger = logging.getLogger(__name__)
 
 
 class ESXHost:
@@ -9,9 +12,10 @@ class ESXHost:
 
     def __execute(self, cmd: list):
         if self.dry_run:
-            print(f"Would execute: {' '.join(cmd)}")
+            logger.info("Would execute: %s", " ".join(cmd))
             return cmd
         else:
+            logger.debug("Executing %s", cmd)
             subprocess.run(cmd, check=True)  # noqa: S603
 
     def add_ip_interface(self, name, portgroup_name):

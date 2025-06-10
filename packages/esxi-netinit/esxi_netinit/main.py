@@ -1,4 +1,7 @@
 import argparse
+import logging
+import logging.handlers
+import os
 import sys
 
 from esxi_netinit.esxconfig import ESXConfig
@@ -8,6 +11,31 @@ OLD_MGMT_PG = "Management Network"
 OLD_VSWITCH = "vSwitch0"
 NEW_MGMT_PG = "mgmt"
 NEW_VSWITCH = "vSwitch22"
+
+
+logger = logging.getLogger(__name__)
+
+
+def setup_logger(log_level=logging.INFO):
+    """Set up the root logger.
+
+    Output to stdout and to syslog at the requested log_level.
+    """
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=log_level,
+    )
+
+    app_name = os.path.basename(sys.argv[0])
+
+    syslog_fmt = logging.Formatter(f"{app_name}: %(levelname)s - %(message)s")
+    try:
+        syslog_handler = logging.handlers.SysLogHandler()
+        syslog_handler.setLevel(log_level)
+        syslog_handler.setFormatter(syslog_fmt)
+        logging.getLogger().addHandler(syslog_handler)
+    except Exception:
+        logger.error("Failed to setup syslog for logging")
 
 
 def main(json_file, dry_run):
@@ -35,8 +63,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    setup_logger()
+
     try:
         main(args.json_file, args.dry_run)
-    except Exception as e:
-        print(f"Error configuring network: {str(e)}")
+    except Exception:
+        logger.exception("Error configuring network")
         sys.exit(1)
