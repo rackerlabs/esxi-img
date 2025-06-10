@@ -18,7 +18,11 @@ class NetworkData:
             net_data = net_data.copy()
             routes_data = net_data.pop("routes", [])
             routes = [Route(**route) for route in routes_data]
-            link_id = net_data.pop("link", [])
+            link_id = net_data.pop("link")
+            if not link_id:
+                raise ValueError(
+                    f"Network {net_data.get('network_id')} is invalid, no link supplied"
+                ) from None
             try:
                 relevant_link = next(link for link in self.links if link.id == link_id)
             except StopIteration:
