@@ -34,7 +34,7 @@ class ESXConfig:
         route = self.network_data.default_route()
         self.host.configure_default_route(route.gateway)
 
-    def configure_portgroups(self, switch_name="vSwitch0"):
+    def configure_vlans(self, switch_name="vSwitch0"):
         portgroups = []
         for link in self.network_data.links:
             if link.type == "vlan":

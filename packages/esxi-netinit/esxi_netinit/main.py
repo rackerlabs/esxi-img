@@ -46,7 +46,7 @@ def main(json_file, dry_run):
         uplink=esx.identify_uplink(), switch_name=NEW_VSWITCH, mtu=9000
     )
 
-    esx.configure_portgroups()
+    esx.configure_vlans()
     esx.add_default_mgmt_interface(NEW_MGMT_PG, NEW_VSWITCH)
     esx.configure_management_interface()
     esx.configure_default_route()
