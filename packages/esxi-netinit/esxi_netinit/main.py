@@ -49,8 +49,7 @@ def main(json_file, dry_run):
     # this configures the Management Network to the default vSwitch
     esx.configure_portgroups(NEW_VSWITCH, [NEW_MGMT_PG])
     esx.configure_vlans()
-    esx.add_default_mgmt_interface(NEW_MGMT_PG, NEW_VSWITCH)
-    esx.configure_management_interface()
+    esx.configure_management_interface(NEW_MGMT_PG)
     esx.configure_default_route()
     esx.configure_requested_dns()
 

@@ -1,3 +1,4 @@
+import logging
 from functools import cached_property
 
 from .esxhost import ESXHost
@@ -5,17 +6,14 @@ from .network_data import NetworkData
 from .nic import NIC
 from .nic_list import NICList
 
+logger = logging.getLogger(__name__)
+
 
 class ESXConfig:
     def __init__(self, network_data: NetworkData, dry_run=False) -> None:
         self.network_data = network_data
         self.dry_run = dry_run
         self.host = ESXHost(dry_run)
-
-    def add_default_mgmt_interface(
-        self, portgroup_name, switch_name, interface_name="vmk0"
-    ):
-        self.host.add_ip_interface(name=interface_name, portgroup_name=portgroup_name)
 
     def clean_default_network_setup(self, portgroup_name, switch_name):
         """Removes default networking setup left by the installer."""
@@ -49,13 +47,23 @@ class ESXConfig:
                 portgroups.append(pg_name)
         return portgroups
 
-    def configure_management_interface(self):
-        mgmt_network = next(
-            net for net in self.network_data.networks if net.default_routes()
-        )
-        return self.host.change_ip(
-            "vmk0", mgmt_network.ip_address, mgmt_network.netmask
-        )
+    def configure_management_interface(self, mgmt_portgroup: str):
+        for net in self.network_data.networks:
+            logger.info(
+                "Creating %s with MAC %s for network %s",
+                net.id,
+                net.link.ethernet_mac_address,
+                net.network_id,
+            )
+            self.host.add_ip_interface(
+                net.id, mgmt_portgroup, net.link.ethernet_mac_address, net.link.mtu
+            )
+            if net.type == "ipv4":
+                self.host.set_static_ipv4(net.id, net.ip_address, net.netmask)
+            elif net.type == "ipv4_dhcp":
+                self.host.set_dhcp_ipv4(net.id)
+            else:
+                raise NotImplementedError(f"net type {net.type}")
 
     def configure_vswitch(self, uplink: NIC, switch_name: str, mtu: int):
         """Sets up vSwitch."""

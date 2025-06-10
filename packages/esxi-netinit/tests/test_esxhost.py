@@ -126,10 +126,10 @@ def test_delete_vmknic(fp, esx_host):
 
 
 def test_add_ip_interface(fp, esx_host):
-    esx_host.add_ip_interface(name="vmk1", portgroup_name="VMNet-Mgmt")
+    esx_host.add_ip_interface("vmk1", "VMNet-Mgmt", "00:11:22:33:44:55", 1234)
     assert (
         fp.call_count(
-            "/bin/esxcli network ip interface add --interface-name vmk1 --portgroup-name VMNet-Mgmt"
+            "/bin/esxcli network ip interface add --interface-name vmk1 --mac-address 00:11:22:33:44:55 --mtu 1234 --portgroup-name VMNet-Mgmt"
         )
         == 1
     )

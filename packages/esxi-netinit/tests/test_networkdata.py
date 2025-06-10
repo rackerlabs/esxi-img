@@ -23,7 +23,7 @@ def test_networks_parsing(network_data_single):
     assert len(network_data.networks) == 1
 
     network = network_data.networks[0]
-    assert network.id == "net0"
+    assert network.id == "vmk0"
     assert network.ip_address == "192.168.1.10"
     assert network.netmask == "255.255.255.0"
     assert network.network_id == "public"
