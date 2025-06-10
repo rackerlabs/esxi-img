@@ -46,6 +46,8 @@ def main(json_file, dry_run):
         uplink=esx.identify_uplink(), switch_name=NEW_VSWITCH, mtu=9000
     )
 
+    # this configures the Management Network to the default vSwitch
+    esx.configure_portgroups(NEW_VSWITCH, [NEW_MGMT_PG])
     esx.configure_vlans()
     esx.add_default_mgmt_interface(NEW_MGMT_PG, NEW_VSWITCH)
     esx.configure_management_interface()

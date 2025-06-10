@@ -15,7 +15,6 @@ class ESXConfig:
     def add_default_mgmt_interface(
         self, portgroup_name, switch_name, interface_name="vmk0"
     ):
-        self.host.portgroup_add(portgroup_name=portgroup_name, switch_name=switch_name)
         self.host.add_ip_interface(name=interface_name, portgroup_name=portgroup_name)
 
     def clean_default_network_setup(self, portgroup_name, switch_name):
@@ -25,6 +24,11 @@ class ESXConfig:
             switch_name=switch_name, portgroup_name=portgroup_name
         )
         self.host.destroy_vswitch(name=switch_name)
+
+    def configure_portgroups(self, switch_name: str, portgroups):
+        """Adds each requested portgroup to the specified switch."""
+        for portgroup_name in portgroups:
+            self.host.portgroup_add(portgroup_name, switch_name)
 
     def configure_default_route(self):
         """Configures default route.
