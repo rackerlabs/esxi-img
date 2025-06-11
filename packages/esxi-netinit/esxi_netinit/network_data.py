@@ -13,11 +13,18 @@ class NetworkData:
         self.data = data
         self.links = self._init_links(data.get("links", []))
         self.networks = []
+        counter = 0
 
         for net_data in data.get("networks", []):
             net_data = net_data.copy()
             routes_data = net_data.pop("routes", [])
             routes = [Route(**route) for route in routes_data]
+            # VMware wants vmkX to be the pattern for logical interfaces
+            # networks map to logical interfaces so ensure we use the right
+            # value
+            net_data["id"] = f"vmk{counter}"
+            # increment for the next one
+            counter = counter + 1
             link_id = net_data.pop("link")
             if not link_id:
                 raise ValueError(
