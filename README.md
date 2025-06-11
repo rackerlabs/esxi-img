@@ -62,3 +62,11 @@ source .venv/bin/activate
 pip install esxi-img
 esxi-img --output esxi.img path/to/esxi.iso
 ```
+
+## ESXi Network Interfaces
+
+ESXi has physical network interfaces and logical interfaces. The `vmnicX`
+interfaces are the physical interfaces and the `vmkX` interfaces are the
+logical interfaces, which are also known as VMkernel interfaces.
+
+![Diagram of ESXi interfaces](/docs/assets/esxi-interfaces.png "Explanation of interfaces")

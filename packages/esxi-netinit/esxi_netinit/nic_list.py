@@ -31,4 +31,7 @@ class NICList(list):
         ).stdout.decode()
 
     def find_by_mac(self, mac) -> NIC:
-        return next(nic for nic in self if nic.mac == mac)
+        try:
+            return next(nic for nic in self if nic.mac == mac)
+        except StopIteration:
+            raise ValueError(f"No NIC with MAC {mac}") from None

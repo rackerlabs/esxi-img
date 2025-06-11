@@ -1,4 +1,7 @@
+import logging
 import subprocess
+
+logger = logging.getLogger(__name__)
 
 
 class ESXHost:
@@ -9,13 +12,17 @@ class ESXHost:
 
     def __execute(self, cmd: list):
         if self.dry_run:
-            print(f"Would execute: {' '.join(cmd)}")
+            logger.info("Would execute: %s", " ".join(cmd))
             return cmd
         else:
+            logger.debug("Executing %s", cmd)
             subprocess.run(cmd, check=True)  # noqa: S603
 
-    def add_ip_interface(self, name, portgroup_name):
+    def add_ip_interface(self, inf: str, portgroup_name: str, mac: str, mtu: int):
         """Adds IP interface."""
+        logger.info(
+            "Adding IP interface %s (%s) for portgroup %s", inf, mac, portgroup_name
+        )
         return self.__execute(
             [
                 "/bin/esxcli",
@@ -24,7 +31,11 @@ class ESXHost:
                 "interface",
                 "add",
                 "--interface-name",
-                name,
+                inf,
+                "--mac-address",
+                mac,
+                "--mtu",
+                str(mtu),
                 "--portgroup-name",
                 portgroup_name,
             ]
@@ -62,6 +73,43 @@ class ESXHost:
             netmask,
             "-t",
             "static",
+        ]
+        return self.__execute(cmd)
+
+    def set_dhcp_ipv4(self, inf: str):
+        """Configures DHCP (IPv4) on an interface."""
+        logger.info("Configuring IPv4 interface %s with DHCP", inf)
+        cmd = [
+            "/bin/esxcli",
+            "network",
+            "ip",
+            "interface",
+            "ipv4",
+            "set",
+            "--interface-name",
+            inf,
+            "--peer-dns=true",
+            "--type=dhcp",
+        ]
+        return self.__execute(cmd)
+
+    def set_static_ipv4(self, inf: str, ip_addr: str, netmask: str):
+        """Configures a static IPv4 address on an interface."""
+        logger.info("Configuring IPv4 interface %s with static IP %s", inf, ip_addr)
+        cmd = [
+            "/bin/esxcli",
+            "network",
+            "ip",
+            "interface",
+            "ipv4",
+            "set",
+            "--interface-name",
+            inf,
+            "--type=static",
+            "--ipv4",
+            ip_addr,
+            "--netmask",
+            netmask,
         ]
         return self.__execute(cmd)
 
