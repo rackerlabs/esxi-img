@@ -19,3 +19,8 @@ def network_data_single():
 @pytest.fixture
 def network_data_multi():
     return _load_json(THIS_DIR / "data" / "net_data_multi.json")
+
+
+@pytest.fixture
+def meta_data():
+    return _load_json(THIS_DIR / "data" / "meta_data.json")

@@ -18,6 +18,17 @@ class ESXHost:
             logger.debug("Executing %s", cmd)
             subprocess.run(cmd, check=True)  # noqa: S603
 
+    def set_hostname(self, hostname: str):
+        cmd = [
+            "/bin/esxcli",
+            "system",
+            "hostname",
+            "set",
+            "--fqdn",
+            hostname,
+        ]
+        return self.__execute(cmd)
+
     def add_ip_interface(self, inf: str, portgroup_name: str, mac: str, mtu: int):
         """Adds IP interface."""
         logger.info(
