@@ -72,13 +72,18 @@ class ESXConfig:
             else:
                 raise NotImplementedError(f"net type {net.type}")
 
-    def configure_vswitch(self, uplink: NIC, switch_name: str, mtu: int):
+    def configure_vswitch(self, switch_name: str, mtu: int):
         """Sets up vSwitch."""
+        uplinks: list[NIC] = self.identify_uplinks()
+
         self.host.create_vswitch(switch_name)
-        self.host.uplink_add(nic=uplink.name, switch_name=switch_name)
+        for uplink in uplinks:
+            self.host.uplink_add(nic=uplink.name, switch_name=switch_name)
+
         self.host.vswitch_failover_uplinks(
-            active_uplinks=[uplink.name], name=switch_name
+            active_uplinks=[uplink.name for uplink in uplinks], name=switch_name
         )
+
         self.host.vswitch_security(name=switch_name)
         self.host.vswitch_settings(mtu=mtu, name=switch_name)
 
@@ -92,17 +97,15 @@ class ESXConfig:
 
         return self.host.configure_dns(servers=dns_servers)
 
-    def identify_uplink(self) -> NIC:
+    def identify_uplinks(self) -> list[NIC]:
         eligible_networks = [
             net for net in self.network_data.networks if net.default_routes()
         ]
-        if len(eligible_networks) != 1:
-            raise ValueError(
-                "the network_data.json should only contain a single default route."
-                "Unable to identify uplink interface"
-            )
-        link = eligible_networks[0].link
-        return self.nics.find_by_mac(link.ethernet_mac_address)
+
+        return [
+            self.nics.find_by_mac(n.link.ethernet_mac_address)
+            for n in eligible_networks
+        ]
 
     @cached_property
     def nics(self):
