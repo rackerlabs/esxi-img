@@ -3,8 +3,10 @@ import logging
 import logging.handlers
 import os
 import sys
+from pathlib import Path
 
 from esxi_netinit.esxconfig import ESXConfig
+from esxi_netinit.meta_data import MetaDataData
 from esxi_netinit.network_data import NetworkData
 
 OLD_MGMT_PG = "Management Network"
@@ -38,9 +40,24 @@ def setup_logger(log_level=logging.INFO):
         logger.error("Failed to setup syslog for logging")
 
 
-def main(json_file, dry_run):
-    network_data = NetworkData.from_json_file(json_file)
-    esx = ESXConfig(network_data, dry_run=dry_run)
+def main(config_dir, dry_run):
+    config_path = Path(config_dir)
+    network_data_file = config_path / "network_data.json"
+    meta_data_file = config_path / "meta_data.json"
+
+    if not network_data_file.exists():
+        logger.error("Missing network_data.json in %s", config_dir)
+        sys.exit(1)
+
+    if not meta_data_file.exists():
+        logger.error("Missing meta_data.json in %s", config_dir)
+        sys.exit(1)
+
+    network_data = NetworkData.from_json_file(network_data_file)
+    meta_data = MetaDataData.from_json_file(meta_data_file)
+
+    esx = ESXConfig(network_data, meta_data, dry_run=dry_run)
+    esx.configure_hostname()
     esx.clean_default_network_setup(OLD_MGMT_PG, OLD_VSWITCH)
     esx.configure_vswitch(
         uplink=esx.identify_uplink(), switch_name=NEW_VSWITCH, mtu=9000
@@ -56,7 +73,11 @@ def main(json_file, dry_run):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Network configuration script")
-    parser.add_argument("json_file", help="Path to the JSON configuration file")
+    parser.add_argument(
+        "config_dir",
+        help="Path to the configuration dir containing "
+        "network_data.json, meta_data.json",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -67,7 +88,7 @@ if __name__ == "__main__":
     setup_logger()
 
     try:
-        main(args.json_file, args.dry_run)
+        main(args.config_dir, args.dry_run)
     except Exception:
         logger.exception("Error configuring network")
         sys.exit(1)

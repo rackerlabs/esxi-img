@@ -54,7 +54,7 @@ non-interactive.
 
 ```bash
 # using uvx
-uvx esxi-image --output esxi.img path/to/esxi.iso
+uvx esxi-img --output esxi.img path/to/esxi.iso
 
 # using pip
 python -m venv .venv

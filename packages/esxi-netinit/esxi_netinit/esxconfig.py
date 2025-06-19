@@ -2,6 +2,7 @@ import logging
 from functools import cached_property
 
 from .esxhost import ESXHost
+from .meta_data import MetaDataData
 from .network_data import NetworkData
 from .nic import NIC
 from .nic_list import NICList
@@ -10,10 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 class ESXConfig:
-    def __init__(self, network_data: NetworkData, dry_run=False) -> None:
+    def __init__(
+        self, network_data: NetworkData, meta_data: MetaDataData, dry_run=False
+    ) -> None:
         self.network_data = network_data
+        self.meta_data = meta_data
         self.dry_run = dry_run
         self.host = ESXHost(dry_run)
+
+    def configure_hostname(self):
+        self.host.set_hostname(self.meta_data.metadata.hostname)
 
     def clean_default_network_setup(self, portgroup_name, switch_name):
         """Removes default networking setup left by the installer."""
