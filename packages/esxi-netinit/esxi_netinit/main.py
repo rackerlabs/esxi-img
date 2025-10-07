@@ -59,9 +59,7 @@ def main(config_dir, dry_run):
     esx = ESXConfig(network_data, meta_data, dry_run=dry_run)
     esx.configure_hostname()
     esx.clean_default_network_setup(OLD_MGMT_PG, OLD_VSWITCH)
-    esx.configure_vswitch(
-        uplink=esx.identify_uplink(), switch_name=NEW_VSWITCH, mtu=9000
-    )
+    esx.configure_vswitch(switch_name=NEW_VSWITCH, mtu=9000)
 
     # this configures the Management Network to the default vSwitch
     esx.configure_portgroups(NEW_VSWITCH, [NEW_MGMT_PG])
