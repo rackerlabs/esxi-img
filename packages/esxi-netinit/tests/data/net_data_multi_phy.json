@@ -1,0 +1,92 @@
+{
+  "links": [
+    {
+      "id": "tapbb0c9df9-fd",
+      "vif_id": "bb0c9df9-fd9d-4f72-b3dc-485b8ad79bdd",
+      "type": "phy",
+      "mtu": 9000,
+      "ethernet_mac_address": "d4:04:e6:4f:a4:d6"
+    },
+    {
+      "id": "tap-stor-100",
+      "vif_id": "54ee92fc-ac01-411e-99a9-eea240e921a7",
+      "type": "phy",
+      "mtu": 9000,
+      "ethernet_mac_address": "D4:04:E6:4F:A4:D7"
+    },
+    {
+      "id": "tap-stor-101",
+      "vif_id": "d87696f3-b4e8-4266-a1bd-6c5beb860470",
+      "type": "phy",
+      "mtu": 9000,
+      "ethernet_mac_address": "14:23:F3:F6:D8:21"
+    }
+  ],
+  "networks": [
+    {
+      "id": "network0",
+      "type": "ipv4",
+      "link": "tapbb0c9df9-fd",
+      "ip_address": "172.31.31.7",
+      "netmask": "255.255.255.0",
+      "routes": [
+        {
+          "network": "0.0.0.0",
+          "netmask": "0.0.0.0",
+          "gateway": "172.31.31.1"
+        }
+      ],
+      "network_id": "77729327-9df3-4ae4-b077-5a3c069abff4",
+      "services": [
+        {
+          "type": "dns",
+          "address": "10.8.255.164"
+        },
+        {
+          "type": "dns",
+          "address": "10.8.255.165"
+        }
+      ]
+    },
+    {
+      "id": "network-for-if100",
+      "type": "ipv4",
+      "link": "tap-stor-100",
+      "ip_address": "100.126.64.6",
+      "netmask": "255.255.255.252",
+      "routes": [
+        {
+          "network": "100.127.0.0",
+          "netmask": "255.255.128.0",
+          "gateway": "100.126.64.5"
+        }
+      ],
+      "network_id": "605e6320b68f46bfb30cdf50c9e2d884"
+    },
+    {
+      "id": "network-for-if101",
+      "type": "ipv4",
+      "link": "tap-stor-101",
+      "ip_address": "100.126.192.6",
+      "netmask": "255.255.255.252",
+      "routes": [
+        {
+          "network": "100.127.128.0",
+          "netmask": "255.255.128.0",
+          "gateway": "100.126.192.5"
+        }
+      ],
+      "network_id": "1ff2fc017a5746b7b6192096307e97f7"
+    }
+  ],
+  "services": [
+    {
+      "type": "dns",
+      "address": "10.8.255.164"
+    },
+    {
+      "type": "dns",
+      "address": "10.8.255.165"
+    }
+  ]
+}
