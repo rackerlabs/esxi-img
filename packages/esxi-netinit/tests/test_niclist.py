@@ -36,3 +36,12 @@ def test_find_by_mac(sample_niclist_data):
 
     assert found.name == "vmnic2"
     assert found.mac == "d4:04:e6:50:3e:9c"
+
+
+def test_find_by_uc_mac(sample_niclist_data):
+    nics = NICList(sample_niclist_data)
+
+    found = nics.find_by_mac("d4:04:e6:50:3e:9d".upper())
+
+    assert found.name == "vmnic3"
+    assert found.mac == "d4:04:e6:50:3e:9d"
