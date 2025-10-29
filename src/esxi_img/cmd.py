@@ -9,6 +9,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -21,6 +22,8 @@ import pycdlib
 
 import esxi_img
 from esxi_img.tarball import Tarball
+
+BLOCKDEV_MODE = stat.S_IFBLK + stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP + stat.S_IWGRP
 
 # Configure logging
 logging.basicConfig(
@@ -454,6 +457,7 @@ def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) ->
         # Format the raw disk and copy files
         loopdev = None
         mount_dir = None
+        partdev = None
         try:
             loopdev = (
                 subprocess.check_output(["losetup", "--show", "-f", str(output_path)])
@@ -490,6 +494,20 @@ def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) ->
             )
 
             partdev = loopdev + "p1"
+            if not os.path.exists(partdev):
+                # If this is being run in a container the kernel might not automatically
+                # create the device node for the partition, so we have to do it manually
+                with open(
+                    os.path.join("/sys/class/block", partdev.rpartition("/")[2], "dev"),
+                    encoding="utf-8",
+                ) as f:
+                    dev_maj_min = f.readline()
+                major, minor = dev_maj_min.split(":")
+                os.mknod(
+                    partdev,
+                    mode=BLOCKDEV_MODE,
+                    device=os.makedev(int(major), int(minor)),
+                )
             subprocess.run(["mkfs.vfat", "-F", "32", partdev], check=True)
             mount_dir = tempfile.mkdtemp()
             subprocess.run(["mount", partdev, mount_dir], check=True)
@@ -508,6 +526,8 @@ def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) ->
                 os.rmdir(mount_dir)
             if loopdev:
                 subprocess.run(["losetup", "-d", loopdev], check=True)
+            if partdev and os.path.exists(partdev):
+                os.unlink(partdev)
 
         return 0
     except subprocess.CalledProcessError as e:
