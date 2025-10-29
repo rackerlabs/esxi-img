@@ -499,7 +499,6 @@ def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) ->
                 # create the device node for the partition, so we have to do it manually
                 with open(
                     os.path.join("/sys/class/block", partdev.rpartition("/")[2], "dev"),
-                    "r",
                     encoding="utf-8",
                 ) as f:
                     dev_maj_min = f.readline()
