@@ -43,7 +43,7 @@ class ESXConfig:
         self.host.configure_static_route(route.gateway, "default")
 
     def configure_static_routes(self):
-        """Configures any static routes in the config"""
+        """Configures any static routes in the config."""
         for net in self.network_data.networks:
             for route in [r for r in net.routes if not r.is_default()]:
                 route_net = ip_network(f"{route.network}/{route.netmask}")
@@ -78,7 +78,9 @@ class ESXConfig:
         mac = (
             "auto" if net.link.type == "vlan" else net.link.ethernet_mac_address.lower()
         )
-        logger.info(f"Creating {net.id} with MAC {mac} for network {net.network_id}")
+        logger.info(
+            "Creating %s with MAC %s for network %s", net.id, mac, net.network_id
+        )
         self.host.add_ip_interface(net.id, portgroup_name, mac, net.link.mtu)
 
         if net.type == "ipv4":
@@ -90,7 +92,7 @@ class ESXConfig:
 
     def configure_vswitch(self, switch_name: str, mtu: int, uplinks: list[NIC]):
         """Sets up vSwitch."""
-        logger.info(f"Creating vswitch {switch_name} with uplinks {uplinks}")
+        logger.info("Creating vswitch %s with uplinks %s", switch_name, uplinks)
         self.host.create_vswitch(switch_name)
         for uplink in uplinks:
             self.host.uplink_add(nic=uplink.name, switch_name=switch_name)
@@ -123,7 +125,7 @@ class ESXConfig:
         else:
             links = [net.link]
 
-        return [self.nics.find_by_mac(l.ethernet_mac_address) for l in links]
+        return [self.nics.find_by_mac(link.ethernet_mac_address) for link in links]
 
     @cached_property
     def nics(self):
@@ -131,15 +133,18 @@ class ESXConfig:
 
     @cached_property
     def management_network(self) -> Network:
-        """Returns the first network with a default route defined, or the first
-        network if no networks have a default route"""
+        """Returns the network selected to be the management network.
+
+        This will be first network with a default route defined, or the first
+        network if no networks have a default route.
+        """
         try:
             return next(
                 (net for net in self.network_data.networks if net.default_routes()),
                 next(iter(self.network_data.networks)),
             )
         except StopIteration:
-            raise Exception("No candidate found for management network")
+            raise Exception("No candidate found for management network") from None
 
     @cached_property
     def other_networks(self) -> list[Network]:
