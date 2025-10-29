@@ -8,6 +8,13 @@
       "ethernet_mac_address": "14:23:f3:f5:3a:d0"
     },
     {
+      "id": "tapbb0c9df9-fd",
+      "vif_id": "bb0c9df9-fd9d-4f72-b3dc-485b8ad79bdd",
+      "type": "phy",
+      "mtu": 9000,
+      "ethernet_mac_address": "d4:04:e6:4f:a4:d6"
+    },
+    {
       "id": "tap1b9c25a9-39",
       "vif_id": "1b9c25a9-396f-43e7-9f1c-a2dcdfd3989c",
       "type": "vlan",
@@ -23,7 +30,7 @@
       "type": "vlan",
       "mtu": 1450,
       "ethernet_mac_address": "fa:16:3e:31:50:d6",
-      "vlan_link": "tap47bb4c37-f6",
+      "vlan_link": "tapbb0c9df9-fd",
       "vlan_id": 222,
       "vlan_mac_address": "fa:16:3e:31:50:d6"
     },
@@ -61,7 +68,13 @@
       "link": "tap1b9c25a9-39",
       "ip_address": "192.168.200.174",
       "netmask": "255.255.255.0",
-      "routes": [],
+      "routes": [
+        {
+          "network": "0.0.0.0",
+          "netmask": "0.0.0.0",
+          "gateway": "192.168.200.1"
+        }
+      ],
       "network_id": "9608ea7d-18d9-4298-8951-ac9dbe20db06",
       "services": []
     },

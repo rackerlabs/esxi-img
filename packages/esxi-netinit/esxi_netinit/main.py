@@ -59,14 +59,18 @@ def main(config_dir, dry_run):
     esx = ESXConfig(network_data, meta_data, dry_run=dry_run)
     esx.configure_hostname()
     esx.clean_default_network_setup(OLD_MGMT_PG, OLD_VSWITCH)
-    esx.configure_vswitch(switch_name=NEW_VSWITCH, mtu=9000)
 
     # this configures the Management Network to the default vSwitch
-    esx.configure_portgroups(NEW_VSWITCH, [NEW_MGMT_PG])
-    esx.configure_vlans()
-    esx.configure_management_interface(NEW_MGMT_PG)
+    esx.configure_interface(esx.management_network, NEW_VSWITCH, NEW_MGMT_PG)
     esx.configure_default_route()
     esx.configure_requested_dns()
+
+    # this configures the remaining networks, adding more vSwitches as necessary
+    for net in esx.other_networks:
+        esx.configure_interface(net)
+
+    # Finally add any static routes
+    esx.configure_static_routes()
 
 
 if __name__ == "__main__":
