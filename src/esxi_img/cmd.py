@@ -495,7 +495,7 @@ def _create_disk_img_linux(source_dir: Path, output_path: Path, size_mb: int) ->
 
             partdev = loopdev + "p1"
             if not os.path.exists(partdev):
-                # If this is being run in a container, the kernel might not automatically
+                # If this is being run in a container the kernel might not automatically
                 # create the device node for the partition, so we have to do it manually
                 with open(
                     os.path.join("/sys/class/block", partdev.rpartition("/")[2], "dev"),
