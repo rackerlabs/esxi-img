@@ -17,8 +17,13 @@ def network_data_single():
 
 
 @pytest.fixture
-def network_data_multi():
-    return _load_json(THIS_DIR / "data" / "net_data_multi.json")
+def network_data_multi_phy():
+    return _load_json(THIS_DIR / "data" / "net_data_multi_phy.json")
+
+
+@pytest.fixture
+def network_data_multi_vlan():
+    return _load_json(THIS_DIR / "data" / "net_data_multi_vlan.json")
 
 
 @pytest.fixture

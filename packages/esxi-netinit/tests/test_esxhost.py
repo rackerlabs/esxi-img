@@ -133,3 +133,13 @@ def test_add_ip_interface(fp, esx_host):
         )
         == 1
     )
+
+
+def test_add_ip_interface_auto_mac(fp, esx_host):
+    esx_host.add_ip_interface("vmk2", "internal_vlan_20", "auto", 1450)
+    assert (
+        fp.call_count(
+            "/bin/esxcli network ip interface add --interface-name vmk2 --mtu 1450 --portgroup-name internal_vlan_20"
+        )
+        == 1
+    )

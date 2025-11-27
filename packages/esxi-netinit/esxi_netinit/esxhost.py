@@ -34,25 +34,28 @@ class ESXHost:
         logger.info(
             "Adding IP interface %s (%s) for portgroup %s", inf, mac, portgroup_name
         )
-        return self.__execute(
+        cmd = [
+            "/bin/esxcli",
+            "network",
+            "ip",
+            "interface",
+            "add",
+            "--interface-name",
+            inf,
+        ]
+        if mac != "auto":
+            cmd.extend(["--mac-address", mac])
+        cmd.extend(
             [
-                "/bin/esxcli",
-                "network",
-                "ip",
-                "interface",
-                "add",
-                "--interface-name",
-                inf,
-                "--mac-address",
-                mac,
                 "--mtu",
                 str(mtu),
                 "--portgroup-name",
                 portgroup_name,
             ]
         )
+        return self.__execute(cmd)
 
-    def configure_default_route(self, gateway):
+    def configure_static_route(self, gateway, network):
         cmd = [
             "/bin/esxcli",
             "network",
@@ -63,7 +66,7 @@ class ESXHost:
             "-g",
             gateway,
             "-n",
-            "default",
+            network,
         ]
         return self.__execute(cmd)
 
