@@ -5,15 +5,11 @@ import os
 import sys
 from pathlib import Path
 
+from esxi_netinit.defaults import DEFAULT_PORTGROUP, DEFAULT_VSWITCH
 from esxi_netinit.esxconfig import ESXConfig
 from esxi_netinit.meta_data import MetaDataData
 from esxi_netinit.network_data import NetworkData
-
-OLD_MGMT_PG = "Management Network"
-OLD_VSWITCH = "vSwitch0"
-NEW_MGMT_PG = "mgmt"
-NEW_VSWITCH = "vSwitch22"
-
+from esxi_netinit.user_data import UserData
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +40,7 @@ def main(config_dir, dry_run):
     config_path = Path(config_dir)
     network_data_file = config_path / "network_data.json"
     meta_data_file = config_path / "meta_data.json"
+    user_data_file = config_path / "user_data"
 
     if not network_data_file.exists():
         logger.error("Missing network_data.json in %s", config_dir)
@@ -55,19 +52,31 @@ def main(config_dir, dry_run):
 
     network_data = NetworkData.from_json_file(network_data_file)
     meta_data = MetaDataData.from_json_file(meta_data_file)
+    if user_data_file.exists():
+        config_data = UserData.from_yaml_file(user_data_file).configdata
+    else:
+        config_data = UserData(dict()).configdata
 
-    esx = ESXConfig(network_data, meta_data, dry_run=dry_run)
+    esx = ESXConfig(
+        network_data, meta_data, config_data.first_extra_vswitch_number, dry_run=dry_run
+    )
     esx.configure_hostname()
-    esx.clean_default_network_setup(OLD_MGMT_PG, OLD_VSWITCH)
+    esx.clean_default_network_setup(DEFAULT_PORTGROUP, DEFAULT_VSWITCH)
 
     # this configures the Management Network to the default vSwitch
-    esx.configure_interface(esx.management_network, NEW_VSWITCH, NEW_MGMT_PG)
+    esx.configure_interface(
+        esx.management_network,
+        config_data.management_vswitch,
+        config_data.management_portgroup,
+    )
     esx.configure_default_route()
     esx.configure_requested_dns()
 
     # this configures the remaining networks, adding more vSwitches as necessary
-    for net in esx.other_networks:
-        esx.configure_interface(net)
+    # only occurs if userdata file with 'configure_all_networks: true' is present
+    if config_data.configure_all_networks:
+        for net in esx.other_networks:
+            esx.configure_interface(net)
 
     # Finally add any static routes
     esx.configure_static_routes()
@@ -78,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "config_dir",
         help="Path to the configuration dir containing "
-        "network_data.json, meta_data.json",
+        "network_data.json, meta_data.json and user_data",
     )
     parser.add_argument(
         "--dry-run",
