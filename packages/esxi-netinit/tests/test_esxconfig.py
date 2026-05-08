@@ -15,7 +15,7 @@ def host_mock(mocker):
 def test_configure_requested_dns(host_mock, network_data_single, meta_data):
     ndata = NetworkData(network_data_single)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 1, dry_run=False)
     ec.host = host_mock
     ec.configure_requested_dns()
     print(host_mock.configure_dns.call_args_list)
@@ -25,7 +25,7 @@ def test_configure_requested_dns(host_mock, network_data_single, meta_data):
 def test_configure_default_route(network_data_single, meta_data, host_mock):
     ndata = NetworkData(network_data_single)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 1, dry_run=False)
     ec.host = host_mock
     ec.configure_default_route()
     host_mock.configure_static_route.assert_called_once_with("192.168.1.1", "default")
@@ -36,7 +36,7 @@ def test_configure_management_interface(
 ):
     ndata = NetworkData(network_data_single)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 21, dry_run=False)
     ec.host = host_mock
     nic = NIC(name="vmnic0", status="Up", link="Up", mac="14:23:f3:f5:3a:d0")
     mocker.patch.object(ec, "identify_uplinks", return_value=[nic])
@@ -56,7 +56,7 @@ def test_configure_management_interface(
 def test_no_other_interfaces(network_data_single, meta_data):
     ndata = NetworkData(network_data_single)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 1, dry_run=False)
     assert ec.other_networks == []
 
 
@@ -65,7 +65,7 @@ def test_configure_mgmt_iface_multi_vlan(
 ):
     ndata = NetworkData(network_data_multi_vlan)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 21, dry_run=False)
     ec.host = host_mock
     nic = NIC(name="vmnic0", status="Up", link="Up", mac="14:23:f3:f5:3a:d0")
     mocker.patch.object(ec, "identify_uplinks", return_value=[nic])
@@ -85,7 +85,7 @@ def test_configure_mgmt_iface_multi_vlan(
 def test_other_vlan_interfaces(network_data_multi_vlan, meta_data, host_mock, mocker):
     ndata = NetworkData(network_data_multi_vlan)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 31, dry_run=False)
     ec.host = host_mock
     mock_nics = [
         NIC(name="vmnic0", status="Up", link="Up", mac="14:23:f3:f5:3a:d0"),
@@ -143,7 +143,7 @@ def test_configure_mgmt_iface_multi_phy(
 ):
     ndata = NetworkData(network_data_multi_phy)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 21, dry_run=False)
     ec.host = host_mock
     mgmt_pg = "Management Network"
     mgmt_net = ndata.networks[0]
@@ -163,7 +163,7 @@ def test_configure_mgmt_iface_multi_phy(
 def test_other_phy_interfaces(network_data_multi_phy, meta_data, host_mock, mocker):
     ndata = NetworkData(network_data_multi_phy)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 11, dry_run=False)
     ec.host = host_mock
     mock_nics = {
         "tap-stor-100": NIC(
@@ -179,20 +179,20 @@ def test_other_phy_interfaces(network_data_multi_phy, meta_data, host_mock, mock
     for network in ec.other_networks:
         ec.configure_interface(network)
     host_mock.create_vswitch.assert_has_calls(
-        [mocker.call("vSwitch31"), mocker.call("vSwitch32")]
+        [mocker.call("vSwitch11"), mocker.call("vSwitch12")]
     )
     assert host_mock.create_vswitch.call_count == 2
     host_mock.uplink_add.assert_has_calls(
         [
-            mocker.call(nic="vmnic3", switch_name="vSwitch31"),
-            mocker.call(nic="vmnic5", switch_name="vSwitch32"),
+            mocker.call(nic="vmnic3", switch_name="vSwitch11"),
+            mocker.call(nic="vmnic5", switch_name="vSwitch12"),
         ]
     )
     assert host_mock.uplink_add.call_count == 2
     host_mock.portgroup_add.assert_has_calls(
         [
-            mocker.call("tap-stor-100", "vSwitch31"),
-            mocker.call("tap-stor-101", "vSwitch32"),
+            mocker.call("tap-stor-100", "vSwitch11"),
+            mocker.call("tap-stor-101", "vSwitch12"),
         ]
     )
     assert host_mock.portgroup_add.call_count == 2
@@ -208,7 +208,7 @@ def test_other_phy_interfaces(network_data_multi_phy, meta_data, host_mock, mock
 def test_set_host_name(network_data_single, meta_data, host_mock):
     ndata = NetworkData(network_data_single)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 1, dry_run=False)
     ec.host = host_mock
     ec.configure_hostname()
     host_mock.set_hostname.assert_called_once_with("test.novalocal")
@@ -217,7 +217,7 @@ def test_set_host_name(network_data_single, meta_data, host_mock):
 def test_configure_vswitch(mocker, network_data_single, meta_data, host_mock):
     ndata = NetworkData(network_data_single)
     meta = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta, dry_run=False)
+    ec = ESXConfig(ndata, meta, 1, dry_run=False)
     ec.host = host_mock
 
     uplinks = [
@@ -250,7 +250,7 @@ def test_identify_uplinks(network_data_multi_vlan, meta_data, mocker):
 
     mocker.patch("esxi_netinit.nic_list.NICList.__init__", return_value=None)
 
-    ec = ESXConfig(ndata, meta, dry_run=False)
+    ec = ESXConfig(ndata, meta, 1, dry_run=False)
 
     mock_nics = [
         NIC(name="vmnic0", status="Up", link="Up", mac="14:23:f3:f5:3a:d0"),
@@ -276,7 +276,7 @@ def test_identify_uplinks(network_data_multi_vlan, meta_data, mocker):
 def test_static_routes(network_data_multi_phy, meta_data, host_mock, mocker):
     ndata = NetworkData(network_data_multi_phy)
     meta_data = MetaDataData(meta_data)
-    ec = ESXConfig(ndata, meta_data, dry_run=False)
+    ec = ESXConfig(ndata, meta_data, 1, dry_run=False)
     ec.host = host_mock
     ec.configure_static_routes()
     host_mock.configure_static_route.assert_has_calls(
@@ -286,3 +286,15 @@ def test_static_routes(network_data_multi_phy, meta_data, host_mock, mocker):
         ]
     )
     assert host_mock.configure_static_route.call_count == 2
+
+def test_get_next_vswitch(host_mock, network_data_single, meta_data):
+    ndata = NetworkData(network_data_single)
+    meta_data = MetaDataData(meta_data)
+    ec = ESXConfig(ndata, meta_data, 31, dry_run=False)
+    ec.host = host_mock
+    assert ec.get_next_vswitch() == "vSwitch31"
+    assert ec.get_next_vswitch() == "vSwitch32"
+    ec.vswitches.add("vSwitch31")
+    ec.vswitches.add("vSwitch32")
+    ec.vswitches.add("vSwitch33")
+    assert ec.get_next_vswitch() == "vSwitch34"
