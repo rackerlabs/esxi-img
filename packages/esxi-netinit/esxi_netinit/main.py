@@ -5,7 +5,8 @@ import os
 import sys
 from pathlib import Path
 
-from esxi_netinit.defaults import DEFAULT_PORTGROUP, DEFAULT_VSWITCH
+from esxi_netinit.defaults import DEFAULT_PORTGROUP
+from esxi_netinit.defaults import DEFAULT_VSWITCH
 from esxi_netinit.esxconfig import ESXConfig
 from esxi_netinit.meta_data import MetaDataData
 from esxi_netinit.network_data import NetworkData

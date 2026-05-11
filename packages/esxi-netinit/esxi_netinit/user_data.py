@@ -1,5 +1,5 @@
-
 import logging
+
 try:
     import yaml
 except ImportError:
@@ -8,6 +8,7 @@ except ImportError:
 from esxi_netinit.configdata import ConfigData
 
 logger = logging.getLogger(__name__)
+
 
 class UserData:
     """Represents user_data."""

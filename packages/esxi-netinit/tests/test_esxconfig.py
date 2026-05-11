@@ -287,6 +287,7 @@ def test_static_routes(network_data_multi_phy, meta_data, host_mock, mocker):
     )
     assert host_mock.configure_static_route.call_count == 2
 
+
 def test_get_next_vswitch(host_mock, network_data_single, meta_data):
     ndata = NetworkData(network_data_single)
     meta_data = MetaDataData(meta_data)
