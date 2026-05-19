@@ -14,14 +14,19 @@ logger = logging.getLogger(__name__)
 
 class ESXConfig:
     def __init__(
-        self, network_data: NetworkData, meta_data: MetaDataData, dry_run=False
+        self,
+        network_data: NetworkData,
+        meta_data: MetaDataData,
+        first_extra_vswitch_number: int,
+        dry_run=False,
     ) -> None:
         self.network_data = network_data
         self.meta_data = meta_data
         self.dry_run = dry_run
         self.host = ESXHost(dry_run)
         self.uplink_map = {}
-        self.next_switch_number = 31
+        self.vswitches = set()
+        self.next_switch_number = first_extra_vswitch_number
 
     def configure_hostname(self):
         self.host.set_hostname(self.meta_data.metadata.hostname)
@@ -50,8 +55,10 @@ class ESXConfig:
                 self.host.configure_static_route(route.gateway, route_net.compressed)
 
     def get_next_vswitch(self):
-        switch_name = f"vSwitch{self.next_switch_number}"
-        self.next_switch_number += 1
+        switch_name = None
+        while not switch_name or switch_name in self.vswitches:
+            switch_name = f"vSwitch{self.next_switch_number}"
+            self.next_switch_number += 1
         return switch_name
 
     def configure_interface(self, net: Network, switch_name=None, portgroup_name=None):
@@ -103,6 +110,7 @@ class ESXConfig:
 
         self.host.vswitch_security(name=switch_name)
         self.host.vswitch_settings(mtu=mtu, name=switch_name)
+        self.vswitches.add(switch_name)
 
     def configure_requested_dns(self):
         """Configures DNS servers that were provided in network_data.json."""
