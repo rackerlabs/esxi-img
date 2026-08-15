@@ -1,0 +1,1 @@
+/sbin/generate-certificates
