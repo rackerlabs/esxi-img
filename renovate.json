@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Keep GitHub Actions on a bi-weekly cadence (1st and 15th of the month)",
+      "matchManagers": ["github-actions"],
+      "schedule": ["* 0-3 1,15 * *"]
+    },
+    {
+      "description": "Never bump the Python interpreter version pinned in workflows; this code targets specific Python versions shipped on VMware ESXi hosts",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["uses-with"],
+      "matchDepNames": ["python"],
+      "enabled": false
+    }
+  ]
+}
